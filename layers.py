@@ -11,9 +11,6 @@ class DenseLayer:
         self.weights = np.random.randn(input_size, self.n_units) * 0.01
         self.biases = np.zeros((1, self.n_units))
 
-        # self.weights = np.zeros((input_size, self.n_units))  # Ваги обнулені, як вказано в завданні
-        # self.biases = np.zeros((1, self.n_units))
-
 
     def forward(self, inputs):
         self.inputs = inputs

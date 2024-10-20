@@ -27,6 +27,5 @@ class NN:
             self.backward(y, y_pred, loss_fn)
             for layer in self.layers:
                 layer.update(optimizer)
-            # if epoch % 100 == 0 and verbose:
-            #     print(f'Epoch {epoch}, Loss: {loss}')
-
+            if epoch % 100 == 0 and verbose:
+                print(f'Epoch {epoch}, Loss: {loss}')
