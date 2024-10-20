@@ -1,31 +1,30 @@
-class NN:
+import numpy as np
+from losses import MSE
+
+class NeuralNetwork:
     def __init__(self, input_size):
         self.layers = []
-        self.input_size = input_size  # Зберігаємо вхідний розмір
+        self.input_size = input_size
 
     def add_layer(self, layer):
-        if self.layers:
-            layer.initialize(self.layers[-1].n_units)  # Передаємо розмір попереднього шару
+        if len(self.layers) == 0:
+            layer.build(self.input_size)
         else:
-            layer.initialize(self.input_size)  # Вхідний розмір
+            layer.build(self.layers[-1].size)
         self.layers.append(layer)
 
-    def forward(self, X):
+    def predict(self, inputs):
         for layer in self.layers:
-            X = layer.forward(X)
-        return X
+            inputs = layer.forward(inputs)
+        return inputs
 
-    def backward(self, y_true, y_pred, loss_fn):
-        dA = loss_fn.backward(y_true, y_pred)
-        for layer in reversed(self.layers):
-            dA = layer.backward(dA)
-
-    def fit(self, X, y, epochs, optimizer, loss_fn, verbose=False):
+    def fit(self, X, y, epochs=1000, optimizer=None, loss_fn=MSE):
+        weights = np.concatenate([layer.get_params() for layer in self.layers])
+        
         for epoch in range(epochs):
-            y_pred = self.forward(X)
-            loss = loss_fn.forward(y, y_pred)
-            self.backward(y, y_pred, loss_fn)
-            for layer in self.layers:
-                layer.update(optimizer)
-            if epoch % 100 == 0 and verbose:
-                print(f'Epoch {epoch}, Loss: {loss}')
+            predictions = self.predict(X)
+            loss = loss_fn(y, predictions)
+            print(f'Epoch {epoch + 1}/{epochs}, Loss: {loss}')
+
+            # Update weights using optimizer
+            weights = optimizer.apply(loss_fn, X, y, weights)
