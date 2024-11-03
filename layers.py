@@ -26,3 +26,9 @@ class DenseLayer:
 
     def update(self, optimizer):
         optimizer.update(self)
+
+    def set_weights(self, weights):
+        self.weights = weights
+
+    def set_biases(self, bias):
+        self.bias = bias
