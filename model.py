@@ -1,3 +1,5 @@
+import pickle
+
 class NeuralNetwork:
     def __init__(self, input_size):
         self.input_size = input_size
@@ -26,3 +28,13 @@ class NeuralNetwork:
 
     def predict(self, X):
         return self.forward(X)
+    
+    def save_weights(self, filepath):
+        with open(filepath, 'wb') as f:
+            pickle.dump([layer.get_weights() for layer in self.layers], f)
+
+    def load_weights(self, filepath):
+        with open(filepath, 'rb') as f:
+            weights = pickle.load(f)
+            for layer, weight in zip(self.layers, weights):
+                layer.set_weights(weight)

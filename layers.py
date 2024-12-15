@@ -24,3 +24,6 @@ class DenseLayer:
         mutation_mask_b = np.random.rand(*self.biases.shape) < mutation_rate
         mutation_values_b = np.random.uniform(-0.5, 0.5, self.biases.shape)
         self.biases += mutation_mask_b * mutation_values_b
+
+    def get_weights(self):
+        return self.weights, self.biases

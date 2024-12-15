@@ -60,7 +60,7 @@ class GeneticOptimizer:
         for generation in range(generations):
             fitness_scores = [self.evaluate_fitness(net, X, y) for net in population]
             parents = self.select_parents(population, fitness_scores)
-            population = self.generate_new_population(parents, network.input_size, network.layers)
+            population = self.generate_new_population(parents)
             if generation % 100 == 0:
                 best_fitness = max(fitness_scores)
                 print(f"Generation {generation}: Best fitness = {best_fitness}")
@@ -68,97 +68,52 @@ class GeneticOptimizer:
         best_index = np.argmax(fitness_scores)
         return population[best_index], fitness_scores[best_index]
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import numpy as np
-import copy
-
-class GDOptimizer:
+       # Gradient Descent Algorithm
+class GradientDescentOptimizer:
     def __init__(self, learning_rate=0.01):
-        """
-        Ініціалізація оптимізатора градієнтного спуску
-        
-        Args:
-            learning_rate (float): Швидкість навчання
-        """
         self.learning_rate = learning_rate
 
     def update(self, layer, grad_w, grad_b):
-        """
-        Оновлення ваг і зміщень шару
-        
-        Args:
-            layer (DenseLayer): Шар нейронної мережі
-            grad_w (np.array): Градієнт ваг
-            grad_b (np.array): Градієнт зміщень
-        """
         layer.weights -= self.learning_rate * grad_w
-        layer.biases -= self.learning_rate * grad_b.mean(axis=0)
+        layer.biases -= self.learning_rate * grad_b
 
     def optimize(self, X, y, network, epochs):
-        """
-        Оптимізація мережі за допомогою градієнтного спуску
-        
-        Args:
-            X (np.array): Вхідні дані
-            y (np.array): Цільові значення
-            network (NeuralNetwork): Нейронна мережа
-            epochs (int): Кількість епох навчання
-        
-        Returns:
-            tuple: Найкраща мережа та її значення функції придатності
-        """
         best_network = copy.deepcopy(network)
         best_fitness = float('-inf')
-        
+
         for epoch in range(epochs):
-            # Пряме поширення
-            predictions = network.forward(X)
+            # Forward pass
+            activations = [X]  # Store all activations, including input
+            for layer in network.layers:
+                layer.forward(activations[-1])
+                activations.append(layer.output)
             
-            # Обчислення похибки
+            predictions = activations[-1]
             error = predictions - y
-            
-            # Зворотне поширення (з урахуванням форм матриць)
+
+            # Backward pass
             for layer_idx in range(len(network.layers) - 1, -1, -1):
                 layer = network.layers[layer_idx]
+                delta = error * layer.activation_func.derivative(activations[layer_idx + 1])
                 
-                # Вхідні дані для поточного шару
-                if layer_idx == 0:
-                    layer_input = X
-                else:
-                    layer_input = network.layers[layer_idx-1].forward(X)
-                
-                # Обчислення градієнтів
-                grad_w = np.dot(layer_input.T, error)
-                grad_b = error
-                
-                # Оновлення шару
+                # Calculate gradients
+                grad_w = np.dot(activations[layer_idx].T, delta)
+                grad_b = np.sum(delta, axis=0, keepdims=True)
+
+                # Update weights and biases
                 self.update(layer, grad_w, grad_b)
-            
-            # Обчислення функції придатності (мінус середньоквадратична похибка)
-            current_fitness = -np.mean(error ** 2)
-            
-            # Оновлення найкращої мережі
+
+                # Compute error for next layer
+                if layer_idx > 0:
+                    error = np.dot(delta, layer.weights.T)
+
+            # Track best network
+            current_fitness = -np.mean((predictions - y) ** 2)
             if current_fitness > best_fitness:
                 best_fitness = current_fitness
                 best_network = copy.deepcopy(network)
-            
-            # Виведення інформації про навчання
+
             if epoch % 100 == 0:
-                print(f"Epoch {epoch}: Loss = {np.mean(error ** 2)}")
-        
+                print(f"Epoch {epoch}: Loss = {-current_fitness}")
+
         return best_network, best_fitness
