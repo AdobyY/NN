@@ -69,51 +69,79 @@ class GeneticOptimizer:
         return population[best_index], fitness_scores[best_index]
     
        # Gradient Descent Algorithm
-class GradientDescentOptimizer:
+import numpy as np
+import copy
+
+class GD:
     def __init__(self, learning_rate=0.01):
+        """
+        Максимально простий оптимізатор градієнтного спуску
+        
+        Параметри:
+        - learning_rate: швидкість навчання 
+        """
         self.learning_rate = learning_rate
 
-    def update(self, layer, grad_w, grad_b):
-        layer.weights -= self.learning_rate * grad_w
-        layer.biases -= self.learning_rate * grad_b
-
     def optimize(self, X, y, network, epochs):
+        """
+        Оптимізація мережі за допомогою простого градієнтного спуску
+        """
+        best_loss = float('inf')
         best_network = copy.deepcopy(network)
-        best_fitness = float('-inf')
 
         for epoch in range(epochs):
-            # Forward pass
-            activations = [X]  # Store all activations, including input
-            for layer in network.layers:
-                layer.forward(activations[-1])
-                activations.append(layer.output)
+            # Пряме поширення
+            predictions = network.forward(X)
             
-            predictions = activations[-1]
-            error = predictions - y
-
-            # Backward pass
-            for layer_idx in range(len(network.layers) - 1, -1, -1):
-                layer = network.layers[layer_idx]
-                delta = error * layer.activation_func.derivative(activations[layer_idx + 1])
-                
-                # Calculate gradients
-                grad_w = np.dot(activations[layer_idx].T, delta)
-                grad_b = np.sum(delta, axis=0, keepdims=True)
-
-                # Update weights and biases
-                self.update(layer, grad_w, grad_b)
-
-                # Compute error for next layer
-                if layer_idx > 0:
-                    error = np.dot(delta, layer.weights.T)
-
-            # Track best network
-            current_fitness = -np.mean((predictions - y) ** 2)
-            if current_fitness > best_fitness:
-                best_fitness = current_fitness
+            # Обчислення похибки
+            loss = np.mean((predictions - y) ** 2)
+            
+            # Зворотне поширення та оновлення ваг
+            self._backpropagate(network, X, y)
+            
+            # Оновлення найкращої мережі
+            if loss < best_loss:
+                best_loss = loss
                 best_network = copy.deepcopy(network)
-
+            
+            # Виведення інформації про прогрес кожні 100 епох
             if epoch % 100 == 0:
-                print(f"Epoch {epoch}: Loss = {-current_fitness}")
+                print(f"Epoch {epoch}: Loss = {loss}")
 
-        return best_network, best_fitness
+        return best_network, best_loss
+
+    def _backpropagate(self, network, X, y):
+        """
+        Зворотне поширення для оновлення ваг
+        """
+        # Обчислення похибки
+        predictions = network.forward(X)
+        error = predictions - y
+
+        # Зворотне поширення для кожного шару
+        for i in range(len(network.layers)-1, -1, -1):
+            layer = network.layers[i]
+            
+            # Обчислення градієнту
+            if i == len(network.layers) - 1:
+                # Для останнього шару
+                output_derivative = error * layer.activation_func.derivative(predictions)
+            else:
+                # Для проміжних шарів
+                next_layer_weights = network.layers[i+1].weights
+                next_layer_error = np.dot(output_derivative, next_layer_weights)
+                output_derivative = next_layer_error * layer.activation_func.derivative(layer.output)
+            
+            # Обчислення градієнтів ваг та зміщень
+            if i > 0:
+                prev_layer_output = network.layers[i-1].output
+            else:
+                prev_layer_output = X
+
+            # Оновлення ваг
+            weight_gradient = np.dot(output_derivative.T, prev_layer_output)
+            layer.weights -= self.learning_rate * weight_gradient
+
+            # Оновлення зміщень
+            bias_gradient = np.sum(output_derivative, axis=0)
+            layer.biases -= self.learning_rate * bias_gradient
