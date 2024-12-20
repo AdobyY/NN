@@ -31,10 +31,12 @@ class NeuralNetwork:
     
     def save_weights(self, filepath):
         with open(filepath, 'wb') as f:
-            pickle.dump([layer.get_weights() for layer in self.layers], f)
+            layer_params = [(layer.weights, layer.biases) for layer in self.layers]
+            pickle.dump(layer_params, f)
 
     def load_weights(self, filepath):
         with open(filepath, 'rb') as f:
-            weights = pickle.load(f)
-            for layer, weight in zip(self.layers, weights):
-                layer.set_weights(weight)
+            layer_params = pickle.load(f)
+            for layer, (weights, biases) in zip(self.layers, layer_params):
+                layer.weights = weights
+                layer.biases = biases

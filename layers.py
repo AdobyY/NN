@@ -27,6 +27,8 @@ class DenseLayer:
 
     def get_weights(self):
         return self.weights, self.biases
-    
-    def set_weights(self, weights_tuple):
-        self.weights, self.biases = weights_tuple
+
+    def set_weights(self, params):
+        weights, biases = params
+        self.weights = weights
+        self.biases = biases
