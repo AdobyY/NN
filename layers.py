@@ -25,8 +25,10 @@ class DenseLayer:
         mutation_values_b = np.random.uniform(-0.5, 0.5, self.biases.shape)
         self.biases += mutation_mask_b * mutation_values_b
 
-    def get_weights(self):
-        return self.weights, self.biases
-    
-    def set_weights(self, weights_tuple):
-        self.weights, self.biases = weights_tuple
+def get_weights(self):
+    return self.weights, self.biases
+
+def set_weights(self, params):
+    weights, biases = params
+    self.weights = weights
+    self.biases = biases
